@@ -209,9 +209,8 @@ function saveConvo(){const rows=[...msgs.querySelectorAll('.q-msg-row')];const f
 function restoreConvo(){const s=sessionStorage.getItem('q_convo');if(!s)return false;const c=JSON.parse(s);if(c.length<=1)return false;pills.classList.add('hidden');for(let i=1;i<c.length;i++)addMsg(c[i].text,c[i].role,true);return true;}
 const bubble=document.getElementById('qBubble'),win=document.getElementById('qWin'),msgs=document.getElementById('qMsgs'),input=document.getElementById('qInput'),sendBtn=document.getElementById('qSend'),typing=document.getElementById('qTyping'),pills=document.getElementById('qPills'),pro=document.getElementById('qPro'),proClose=document.getElementById('proClose');
 msgs.addEventListener('scroll',()=>{userScrolled=msgs.scrollTop<msgs.scrollHeight-msgs.clientHeight-50;});
-let savedScrollY=0;
-function openWidget(){win.classList.add('open');bubble.classList.add('open');pro.classList.remove('visible');input.focus();if(window.innerWidth<=480){savedScrollY=window.scrollY;document.body.style.position='fixed';document.body.style.top=-savedScrollY+'px';document.body.style.left='0';document.body.style.right='0';document.body.style.width='100%';}}
-function closeWidget(){win.classList.remove('open');bubble.classList.remove('open');if(window.innerWidth<=480){document.body.style.position='';document.body.style.top='';document.body.style.left='';document.body.style.right='';document.body.style.width='';window.scrollTo(0,savedScrollY);}}
+function openWidget(){win.classList.add('open');bubble.classList.add('open');pro.classList.remove('visible');input.focus();if(window.innerWidth<=480){document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';}}
+function closeWidget(){win.classList.remove('open');bubble.classList.remove('open');if(window.innerWidth<=480){document.documentElement.style.overflow='';document.body.style.overflow='';}}
 bubble.addEventListener('click',()=>{win.classList.contains('open')?closeWidget():openWidget();});
 pro.addEventListener('click',()=>openWidget());
 proClose.addEventListener('click',(e)=>{e.stopPropagation();pro.classList.remove('visible');sessionStorage.setItem('q_pro_x','1');});
