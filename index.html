@@ -268,7 +268,7 @@ input.disabled=false;sendBtn.disabled=false;});}
 
 sendBtn.addEventListener('click',()=>send(input.value));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input.value);}});
-if(window.visualViewport&&window.innerWidth<=480){window.visualViewport.addEventListener('resize',()=>{if(window.innerWidth>480)return;msgs.scrollTop=msgs.scrollHeight;});}
+if(window.visualViewport&&window.innerWidth<=480){window.visualViewport.addEventListener('resize',()=>{if(window.innerWidth>480)return;const kbH=window.innerHeight-window.visualViewport.height;if(kbH>150){win.style.bottom=kbH+'px';}else{win.style.bottom='';}msgs.scrollTop=msgs.scrollHeight;});}
 document.querySelectorAll('.q-pill').forEach(p=>{p.addEventListener('click',()=>send(p.dataset.msg));p.setAttribute('tabindex','0');p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();send(p.dataset.msg);}});});
 // Reset chat
 const closeBtn=document.getElementById('qClose');
