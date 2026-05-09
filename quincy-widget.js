@@ -41,7 +41,7 @@
   .q-window { position: fixed; bottom: 100px; right: 24px; width: 400px; height: 600px; max-height: calc(100vh - 130px); background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; z-index: 9999; opacity: 0; transform: translateY(16px) scale(0.96); pointer-events: none; transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1); }
   .q-window.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
   @media (max-width: 480px) {
-    .q-window { top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: auto; max-height: none; border-radius: 0; }
+    .q-window { top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: auto; max-height: none; border-radius: 0; transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1), top 0.25s cubic-bezier(0.4,0,0.2,1), height 0.25s cubic-bezier(0.4,0,0.2,1); }
     .q-header { gap: 6px; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); border-radius: 0; }
     .q-header-info { min-width: 0; }
     .q-header-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -52,6 +52,7 @@
     .q-bubble:not(.open) { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); right: 16px; }
     .q-header .q-close-btn { display: flex; width: 32px; height: 32px; }
     .q-proactive { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); right: 16px; max-width: calc(100vw - 100px); }
+    .q-input { font-size: 16px; }
   }
 
   .q-header { background: var(--navy); padding: 14px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; border-radius: var(--radius) var(--radius) 0 0; }
@@ -87,7 +88,7 @@
   .q-msg.bot tr:last-child td { border-bottom: none; }
   .q-msg.bot tr:nth-child(even) td { background: var(--grey-50); }
 
-  .q-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--grey-50); scroll-behavior: smooth; }
+  .q-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--grey-50); overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
   .q-messages::-webkit-scrollbar { width: 4px; }
   .q-messages::-webkit-scrollbar-track { background: transparent; }
   .q-messages::-webkit-scrollbar-thumb { background: var(--grey-300); border-radius: 10px; }
@@ -215,9 +216,9 @@ function restoreConvo(){const s=sessionStorage.getItem('q_convo');if(!s)return f
 const bubble=document.getElementById('qBubble'),win=document.getElementById('qWin'),msgs=document.getElementById('qMsgs'),input=document.getElementById('qInput'),sendBtn=document.getElementById('qSend'),typing=document.getElementById('qTyping'),pills=document.getElementById('qPills'),pro=document.getElementById('qPro'),proClose=document.getElementById('proClose');
 msgs.addEventListener('scroll',()=>{userScrolled=msgs.scrollTop<msgs.scrollHeight-msgs.clientHeight-50;});
 let lastVVH=0;
-function preventBodyTouch(e){let n=e.target;while(n&&n!==document.documentElement){if(n.scrollHeight>n.clientHeight){const o=getComputedStyle(n).overflowY;if(o==='auto'||o==='scroll')return;}n=n.parentNode;}e.preventDefault();}
-function openWidget(){win.classList.add('open');bubble.classList.add('open');pro.classList.remove('visible');try{input.focus({preventScroll:true});}catch(e){input.focus();}if(window.innerWidth<=480){document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';document.documentElement.style.overscrollBehavior='none';document.body.style.overscrollBehavior='none';document.addEventListener('touchmove',preventBodyTouch,{passive:false});lastVVH=window.visualViewport?window.visualViewport.height:window.innerHeight;}}
-function closeWidget(){win.classList.remove('open');bubble.classList.remove('open');win.style.bottom='';win.style.top='';if(window.innerWidth<=480){document.documentElement.style.overflow='';document.body.style.overflow='';document.documentElement.style.overscrollBehavior='';document.body.style.overscrollBehavior='';document.removeEventListener('touchmove',preventBodyTouch);}}
+function preventBodyTouch(e){let n=e.target;while(n&&n!==document.documentElement){if(n===msgs&&n.scrollHeight>n.clientHeight)return;n=n.parentNode;}e.preventDefault();}
+function openWidget(){win.style.bottom='';win.style.top='';win.style.height='';win.classList.add('open');bubble.classList.add('open');pro.classList.remove('visible');if(window.innerWidth<=480){window.scrollTo(0,0);document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';document.documentElement.style.overscrollBehavior='none';document.body.style.overscrollBehavior='none';document.addEventListener('touchmove',preventBodyTouch,{passive:false});lastVVH=window.innerHeight;requestAnimationFrame(()=>{win.style.top='0px';win.style.height=window.innerHeight+'px';win.style.bottom='auto';});}msgs.scrollTop=msgs.scrollHeight;if(window.innerWidth>480){try{input.focus({preventScroll:true});}catch(e){input.focus();}}}
+function closeWidget(){try{input.blur();}catch(e){}win.classList.remove('open');bubble.classList.remove('open');win.style.bottom='';win.style.top='';win.style.height='';if(window.innerWidth<=480){document.documentElement.style.overflow='';document.body.style.overflow='';document.documentElement.style.overscrollBehavior='';document.body.style.overscrollBehavior='';document.removeEventListener('touchmove',preventBodyTouch);lastVVH=0;}}
 bubble.addEventListener('click',()=>{win.classList.contains('open')?closeWidget():openWidget();});
 pro.addEventListener('click',()=>openWidget());
 proClose.addEventListener('click',(e)=>{e.stopPropagation();pro.classList.remove('visible');sessionStorage.setItem('q_pro_x','1');});
@@ -268,14 +269,20 @@ const ctrl=new AbortController();const tid=setTimeout(()=>ctrl.abort(),TIMEOUT_M
 fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:sid,chatInput:text.trim()}),signal:ctrl.signal})
 .then(r=>r.json()).then(d=>{clearTimeout(tid);clearTimeout(slowTimer);typing.classList.remove('active');typingText.textContent='Quincy';
 const reply=d.output||d.text||d.response||d.message||'Sorry, something went wrong.';
-addMsg(reply,'bot');saveConvo();input.disabled=false;sendBtn.disabled=false;try{input.focus({preventScroll:true});}catch(e){input.focus();}})
+addMsg(reply,'bot');saveConvo();input.disabled=false;sendBtn.disabled=false;if(window.innerWidth>480){try{input.focus({preventScroll:true});}catch(e){input.focus();}}})
 .catch(e=>{clearTimeout(tid);clearTimeout(slowTimer);typing.classList.remove('active');typingText.textContent='Quincy';
 addMsg(e.name==='AbortError'?"Quincy is taking a moment. You can reach the team on (08) 9246 1039 or email reservations@rottnestfastferries.com.au.":"Sorry, I'm having trouble connecting. You can reach the team on (08) 9246 1039 or email reservations@rottnestfastferries.com.au.",'bot');
 input.disabled=false;sendBtn.disabled=false;});}
 
 sendBtn.addEventListener('click',()=>send(input.value));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input.value);}});
-if(window.visualViewport&&window.innerWidth<=480){let pendingFrame=null;function adjustHeight(){if(window.innerWidth>480)return;if(pendingFrame)return;pendingFrame=requestAnimationFrame(()=>{pendingFrame=null;const h=window.visualViewport.height;const kbH=window.innerHeight-h;if(Math.abs(h-lastVVH)>100){if(kbH>100){win.style.bottom=kbH+'px';}else{win.style.bottom='';}msgs.scrollTop=msgs.scrollHeight;lastVVH=h;}});}window.visualViewport.addEventListener('resize',adjustHeight);}
+let pendingFrame=null,cachedVVH=0,blurLockUntil=0;
+function setWinSize(t,h){win.style.top=t+'px';win.style.height=h+'px';win.style.bottom='auto';}
+function clearWinSize(){if(window.innerWidth<=480){setWinSize(0,window.innerHeight);}else{win.style.top='';win.style.height='';win.style.bottom='';}}
+function adjustHeight(){if(window.innerWidth>480||!window.visualViewport)return;if(Date.now()<blurLockUntil)return;if(pendingFrame)return;pendingFrame=requestAnimationFrame(()=>{pendingFrame=null;const vv=window.visualViewport;const h=vv.height;const t=vv.offsetTop||0;const kbUp=(window.innerHeight-h-t)>100;if(kbUp){if(h>cachedVVH)cachedVVH=h;setWinSize(t,h);msgs.scrollTop=msgs.scrollHeight;}else{clearWinSize();if(window.scrollY!==0)window.scrollTo(0,0);}});}
+if(window.visualViewport){window.visualViewport.addEventListener('resize',adjustHeight);}
+input.addEventListener('focus',()=>{if(window.innerWidth>480)return;msgs.scrollTop=msgs.scrollHeight;if(cachedVVH>0){setTimeout(()=>{win.style.transition='opacity 0.35s cubic-bezier(0.4,0,0.2,1), transform 0.35s cubic-bezier(0.4,0,0.2,1)';setWinSize(0,cachedVVH);msgs.scrollTop=msgs.scrollHeight;const start=performance.now();const lock=()=>{msgs.scrollTop=msgs.scrollHeight;if(performance.now()-start<400)requestAnimationFrame(lock);};lock();},80);}});
+input.addEventListener('blur',()=>{if(window.innerWidth>480)return;blurLockUntil=Date.now()+500;setTimeout(()=>{win.style.transition='';clearWinSize();window.scrollTo(0,0);},0);});
 document.querySelectorAll('.q-pill').forEach(p=>{p.addEventListener('click',()=>send(p.dataset.msg));p.setAttribute('tabindex','0');p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();send(p.dataset.msg);}});});
 // Reset chat
 var vp=document.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')===-1)vp.content+=', viewport-fit=cover';
