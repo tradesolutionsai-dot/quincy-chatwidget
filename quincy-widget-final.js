@@ -1,9 +1,9 @@
-// Quincy Chat Widget — injectable loader
+// Quincy Chat Widget — injectable loader (Final)
 (function() {
   'use strict';
 
   // ───── Mobile dispatch ─────
-  // Mobile uses a separate iframe-based widget (see mobile-widget-iframe.html).
+  // Mobile uses a separate iframe-based widget (see mobile-widget-iframe-final.html).
   // Desktop uses the original DOM-injected widget below.
   var isMobile = window.innerWidth <= 480 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -19,13 +19,13 @@
     var scriptEl = document.currentScript || (function(){
       var ss = document.getElementsByTagName('script');
       for (var i = ss.length - 1; i >= 0; i--) {
-        if (ss[i].src && /quincy-widget(\.min)?\.js/.test(ss[i].src)) return ss[i];
+        if (ss[i].src && /quincy-widget(-final)?(\.min)?\.js/.test(ss[i].src)) return ss[i];
       }
       return null;
     })();
     var iframeHtmlUrl = scriptEl
-      ? scriptEl.src.replace(/quincy-widget(\.min)?\.js.*$/, 'mobile-widget-iframe.html')
-      : 'https://cdn.jsdelivr.net/gh/tradesolutionsai-dot/quincy-chatwidget@main/mobile-widget-iframe.html';
+      ? scriptEl.src.replace(/quincy-widget(-final)?(\.min)?\.js.*$/, 'mobile-widget-iframe-final.html')
+      : 'https://cdn.jsdelivr.net/gh/tradesolutionsai-dot/quincy-chatwidget@main/mobile-widget-iframe-final.html';
 
     var fontLink = document.createElement('link');
     fontLink.rel = 'stylesheet';
