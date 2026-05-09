@@ -1,5 +1,122 @@
 // Quincy Chat Widget — injectable loader
 (function() {
+  'use strict';
+
+  // ───── Mobile dispatch ─────
+  // Mobile uses a separate iframe-based widget (see mobile-widget-iframe.html).
+  // Desktop uses the original DOM-injected widget below.
+  var isMobile = window.innerWidth <= 480 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    runMobileWidget();
+    return;
+  }
+
+  runDesktopWidget();
+
+  // ───── Mobile widget (iframe-based) ─────
+  function runMobileWidget() {
+    var scriptEl = document.currentScript || (function(){
+      var ss = document.getElementsByTagName('script');
+      for (var i = ss.length - 1; i >= 0; i--) {
+        if (ss[i].src && /quincy-widget(\.min)?\.js/.test(ss[i].src)) return ss[i];
+      }
+      return null;
+    })();
+    var iframeHtmlUrl = scriptEl
+      ? scriptEl.src.replace(/quincy-widget(\.min)?\.js.*$/, 'mobile-widget-iframe.html')
+      : 'https://cdn.jsdelivr.net/gh/tradesolutionsai-dot/quincy-chatwidget@main/mobile-widget-iframe.html';
+
+    var fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap';
+    document.head.appendChild(fontLink);
+
+    var style = document.createElement('style');
+    style.textContent =
+      '.q-mobile-bubble{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;width:60px;height:60px;border-radius:50%;background:#0a2a4a;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(10,42,74,0.4);z-index:2147483646;outline:none;-webkit-tap-highlight-color:transparent;}'
+      + '.q-mobile-bubble svg{width:26px;height:26px;fill:#fff;}'
+      + '.q-mobile-bubble.open{display:none;}'
+      + '.q-mobile-iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff;z-index:2147483647;display:block;}';
+    document.head.appendChild(style);
+
+    var bubble = document.createElement('button');
+    bubble.className = 'q-mobile-bubble';
+    bubble.id = 'qMobileBubble';
+    bubble.setAttribute('aria-label', 'Chat with Quincy');
+    bubble.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/></svg>';
+    document.body.appendChild(bubble);
+
+    var iframe = null;
+    var savedScrollY = 0;
+    var iframeHtmlCache = null;
+
+    function lockBody() {
+      savedScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.position = 'fixed';
+      document.body.style.top = '-' + savedScrollY + 'px';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      document.documentElement.style.overflow = 'hidden';
+    }
+    function unlockBody() {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+      window.scrollTo(0, savedScrollY);
+    }
+
+    function openIframe() {
+      if (iframe) return;
+      bubble.classList.add('open');
+      lockBody();
+      iframe = document.createElement('iframe');
+      iframe.className = 'q-mobile-iframe';
+      iframe.setAttribute('title', 'Quincy chat');
+      iframe.setAttribute('allow', 'clipboard-write');
+
+      if (iframeHtmlCache) {
+        iframe.srcdoc = iframeHtmlCache;
+      } else {
+        fetch(iframeHtmlUrl, { cache: 'force-cache' })
+          .then(function(r){ return r.text(); })
+          .then(function(html){
+            iframeHtmlCache = html;
+            if (iframe) iframe.srcdoc = html;
+          })
+          .catch(function(err){
+            console.error('Quincy: failed to load mobile widget', err);
+            closeIframe();
+          });
+      }
+      document.body.appendChild(iframe);
+    }
+
+    function closeIframe() {
+      if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      iframe = null;
+      bubble.classList.remove('open');
+      unlockBody();
+    }
+
+    bubble.addEventListener('click', function(){
+      if (iframe) closeIframe(); else openIframe();
+    });
+
+    window.addEventListener('message', function(e){
+      var d = e && e.data;
+      if (!d || typeof d !== 'object') return;
+      if (d.source !== 'quincy-widget') return;
+      if (d.type === 'close') closeIframe();
+    });
+  }
+
+  // ───── Desktop widget (original DOM-injected) ─────
+  function runDesktopWidget() {
   // Inject Google Font
   var link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -315,4 +432,5 @@ restoreConvo();
 })();
   };
   document.head.appendChild(script);
+  } // end runDesktopWidget
 })();
