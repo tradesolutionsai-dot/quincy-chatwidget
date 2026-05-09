@@ -402,13 +402,13 @@ html, body {
   }
 
   function saveConvo() {
+    // Skip first row (welcome — hardcoded in HTML, re-rendered each iframe open)
     var rows = msgs.querySelectorAll('.msg-row');
-    var firstBot = msgs.querySelector('.msg.bot');
-    var c = firstBot ? [{role:'bot', text:firstBot.textContent}] : [];
-    Array.prototype.forEach.call(rows, function(r){
-      var m = r.querySelector('.msg');
+    var c = [];
+    for (var i = 1; i < rows.length; i++) {
+      var m = rows[i].querySelector('.msg');
       if (m) c.push({role: m.classList.contains('user') ? 'user' : 'bot', text: m.textContent});
-    });
+    }
     sessionStorage.setItem('q_convo', JSON.stringify(c));
   }
 
@@ -417,9 +417,9 @@ html, body {
     if (!s) return false;
     try {
       var c = JSON.parse(s);
-      if (c.length <= 1) return false;
+      if (!c.length) return false;
       pills.classList.add('hidden');
-      for (var i = 1; i < c.length; i++) addMsg(c[i].text, c[i].role, true);
+      for (var i = 0; i < c.length; i++) addMsg(c[i].text, c[i].role, true);
       return true;
     } catch(e) { return false; }
   }
