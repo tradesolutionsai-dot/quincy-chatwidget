@@ -201,7 +201,7 @@
   .q-header-name { font-family: var(--font); font-weight: 700; font-size: 15px; line-height: 1.2; color: var(--white); }
   .q-header-status { font-family: var(--font); font-size: 11.5px; line-height: 1.2; color: rgba(255,255,255,0.7); margin-top: 0; display: flex; align-items: center; gap: 5px; }
   .q-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 4px rgba(126,217,87,0.5); }
-  .q-book-btn { padding: 7px 16px; border-radius: 20px; background: var(--white); color: var(--navy); font-family: var(--font); font-weight: 600; font-size: 12px; cursor: pointer; text-decoration: none; border: none; flex-shrink: 0; transition: background 0.2s, transform 0.15s; }
+  .q-book-btn { padding: 9px 18px; border-radius: 20px; background: var(--white); color: var(--navy); font-family: var(--font); font-weight: 600; font-size: 13px; cursor: pointer; text-decoration: none; border: none; flex-shrink: 0; transition: background 0.2s, transform 0.15s; }
   .q-book-btn:hover { background: #f0f0f0; transform: scale(1.03); }
   .q-reset-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.2); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s, transform 0.15s; }
   .q-reset-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
@@ -246,9 +246,9 @@
   .q-msg.user { background: var(--navy); color: var(--white); border: none; border-radius: 14px 14px 4px 14px; }
   .q-msg.bot a { color: var(--navy); text-decoration: underline; text-underline-offset: 2px; font-weight: 500; }
 
-  .q-pills { display: flex; flex-wrap: nowrap; gap: 4px; padding: 6px 0 2px; margin-top: auto; overflow-x: auto; }
+  .q-pills { display: flex; flex-wrap: nowrap; gap: 6px; padding: 6px 0 2px; margin-top: auto; overflow-x: auto; }
   .q-pills.hidden { display: none; }
-  .q-pill { padding: 6px 11px; border-radius: 24px; border: 1.5px solid var(--navy); background: var(--white); font-family: var(--font); font-weight: 500; font-size: 12.5px; color: var(--navy); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .q-pill { padding: 9px 15px; border-radius: 24px; border: 1.5px solid var(--navy); background: var(--white); font-family: var(--font); font-weight: 500; font-size: 14px; color: var(--navy); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
   .q-pill:hover { background: var(--navy); color: var(--white); }
   .q-pill:active { transform: scale(0.96); }
 
