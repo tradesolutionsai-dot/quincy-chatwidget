@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;font-family:ui-monospace,Menlo,monospace;background:#fff}
+  .app{display:flex;flex-direction:column;height:100%}
+  .head{background:#0a2a4a;color:#fff;padding:6px 10px;font-size:11px;flex-shrink:0}
+  .read{flex:1;overflow:auto;padding:6px 10px;font-size:11px;line-height:1.45;background:#f6f8fa}
+  .row{display:flex;justify-content:space-between;border-bottom:1px solid #e3e8ee}
+  .k{color:#556}.v{font-weight:700;color:#0a2a4a}.hot{color:#c00}
+  .bar{flex-shrink:0;padding:6px 8px;background:#fff;border-top:1px solid #ccc}
+  input{width:100%;font-size:16px;padding:10px;border:2px solid #0a2a4a;border-radius:8px}
+  /* RED STRIPE = the true bottom edge of the iframe. Whatever covers it is Safari chrome. */
+  .edge{flex-shrink:0;height:14px;background:repeating-linear-gradient(90deg,#f00,#f00 10px,#fff 10px,#fff 20px);
+        color:#000;font-size:9px;text-align:center;line-height:14px;font-weight:700}
+  #probe{position:fixed;bottom:0;left:0;width:1px;height:env(safe-area-inset-bottom,0px);pointer-events:none}
+</style></head>
+<body>
+<div id="probe"></div>
+<div class="app">
+  <div class="head">DIAG v2 — tap input, screenshot with keyboard OPEN</div>
+  <div class="read" id="out">waiting…</div>
+  <div class="bar"><input id="inp" placeholder="Tap here"></div>
+  <div class="edge">↓ TRUE IFRAME BOTTOM EDGE ↓</div>
+</div>
+<script>
+var out=document.getElementById('out'), inp=document.getElementById('inp'), probe=document.getElementById('probe');
+var P={}, log=[];
+function r(k,v,hot){return '<div class="row"><span class="k">'+k+'</span><span class="v '+(hot?'hot':'')+'">'+v+'</span></div>';}
+function sabInner(){return Math.round(parseFloat(getComputedStyle(probe).height)||0);}
+function render(){
+  var vv=window.visualViewport||{};
+  var h='<b>PARENT</b>';
+  h+=r('innerHeight',P.iH);
+  h+=r('vv.height',P.vvH);
+  h+=r('vv.offsetTop',P.vvT,P.vvT>0);
+  h+=r('safe-area-bottom',P.sab);
+  h+=r('scrollY',P.sy,P.sy!==0);
+  h+=r('iframe rect.top',P.fT);
+  h+=r('iframe rect.bottom',P.fB);
+  h+=r('iframe height',P.fH);
+  h+=r('iH - vvH - vvT',P.gap);
+  h+='<b>IFRAME</b>';
+  h+=r('innerHeight',window.innerHeight);
+  h+=r('vv.height',vv.height!==undefined?Math.round(vv.height):'n/a');
+  h+=r('vv.offsetTop',vv.offsetTop!==undefined?Math.round(vv.offsetTop):'n/a');
+  h+=r('safe-area-bottom',sabInner(),sabInner()===0);
+  h+=r('docEl.clientHeight',document.documentElement.clientHeight);
+  h+='<b>LOG</b><div style="font-size:9px">'+log.slice(0,6).join('<br>')+'</div>';
+  out.innerHTML=h;
+}
+function note(s){log.unshift(s);if(log.length>10)log.pop();render();}
+window.addEventListener('message',function(e){var d=e&&e.data;if(!d||d.diag!==1)return;P=d;render();});
+inp.addEventListener('focus',function(){note('FOCUS');});
+inp.addEventListener('blur',function(){note('BLUR');});
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',function(){note('vvRESIZE h='+Math.round(window.visualViewport.height));});
+  window.visualViewport.addEventListener('scroll',function(){note('vvSCROLL t='+Math.round(window.visualViewport.offsetTop));});
+}
+render(); setInterval(render,250);
+</script>
+</body></html>

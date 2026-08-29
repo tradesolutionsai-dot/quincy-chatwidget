@@ -34,8 +34,9 @@
 
     var style = document.createElement('style');
     style.textContent =
-      '.q-mobile-bubble{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:16px;width:60px;height:60px;border-radius:50%;background:#0a2a4a;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(10,42,74,0.4);z-index:2147483646;outline:none;-webkit-tap-highlight-color:transparent;}'
-      + '.q-mobile-bubble svg{width:26px;height:26px;fill:#fff;}'
+      '.q-mobile-bubble{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));right:calc(16px + env(safe-area-inset-right,0px));width:60px;height:60px;border-radius:50%;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2147483646;outline:none;-webkit-tap-highlight-color:transparent;}'
+      + '.q-mobile-bubble::before{content:"";position:absolute;inset:0;border-radius:50%;background:#0a2a4a;box-shadow:0 4px 24px rgba(10,42,74,0.4);}'
+      + '.q-mobile-bubble svg{position:relative;width:26px;height:26px;fill:#fff;}'
       + '.q-mobile-bubble.open{display:none;}'
       + '.q-mobile-iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#fff;z-index:2147483647;display:block;}'
       + '.q-mobile-teaser{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));right:16px;max-width:calc(100vw - 84px);background:#fff;border-radius:16px 16px 4px 16px;padding:12px 16px;box-shadow:0 4px 20px rgba(0,0,0,0.18);font-family:\'DM Sans\',-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;line-height:1.45;color:#343A40;z-index:2147483645;display:flex;align-items:center;gap:10px;opacity:0;transform:translateY(8px) scale(0.96);pointer-events:none;transition:opacity 0.35s ease,transform 0.35s ease;cursor:pointer;}'
@@ -51,9 +52,14 @@
     document.body.appendChild(bubble);
 
     var iframe = null;
-    var savedScrollY = 0;
     var iframeHtmlCache = null;
 
+    // Scroll lock: the position:fixed + negative-top technique with scroll
+    // restoration. On iOS `overflow:hidden` does NOT reliably lock scrolling
+    // and interacts badly with iOS 26's Liquid Glass toolbar sampling, so
+    // this is the correct approach here despite an old commit in this repo
+    // having moved away from it.
+    var savedScrollY = 0;
     function lockBody() {
       savedScrollY = window.scrollY || window.pageYOffset || 0;
       document.body.style.position = 'fixed';
@@ -61,7 +67,6 @@
       document.body.style.left = '0';
       document.body.style.right = '0';
       document.body.style.width = '100%';
-      document.documentElement.style.overflow = 'hidden';
     }
     function unlockBody() {
       document.body.style.position = '';
@@ -69,9 +74,63 @@
       document.body.style.left = '';
       document.body.style.right = '';
       document.body.style.width = '';
-      document.documentElement.style.overflow = '';
       window.scrollTo(0, savedScrollY);
     }
+
+    // Pin the iframe to the live visual viewport. The host site's <head> is
+    // outside our control, so the page never gets
+    // interactive-widget=resizes-content; when the keyboard opens iOS shrinks
+    // AND pans the visual viewport, and a static position:fixed;inset:0
+    // iframe tracks neither — it slides and exposes the host page behind it.
+    // Matching top/left/width/height to visualViewport keeps the widget
+    // exactly over the visible area, so the input sits right above the
+    // keyboard. Listen to BOTH resize and scroll: iOS often pans (scroll)
+    // after the resize has already settled.
+    // WebKit still does not support interactive-widget=resizes-content (open
+    // since 2022), so on iOS the keyboard only shrinks the VISUAL viewport --
+    // the layout viewport and every position:fixed element stay put. Drive the
+    // panel from visualViewport instead: height = visible height, and shift it
+    // with transform (composited, and more reliable than `top` under iOS 26's
+    // fixed-position regressions). Listen to resize AND scroll, since iOS often
+    // pans after the resize has settled.
+    var pendingFrame = null;
+    function syncFrameToViewport() {
+      if (!iframe || !window.visualViewport) return;
+      if (pendingFrame) return;
+      pendingFrame = requestAnimationFrame(function(){
+        pendingFrame = null;
+        if (!iframe) return;
+        var vv = window.visualViewport;
+        iframe.style.height = vv.height + 'px';
+        iframe.style.transform = 'translateY(' + (vv.offsetTop || 0) + 'px)';
+        iframe.style.bottom = 'auto';
+      });
+    }
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncFrameToViewport);
+      window.visualViewport.addEventListener('scroll', syncFrameToViewport);
+    }
+
+    // iOS 26 regression: visualViewport.offsetTop does not reliably reset to 0
+    // after the keyboard is dismissed, stranding fixed elements. A 1px scroll
+    // nudge forces Safari to recompute. Guarded so it only runs when actually
+    // stuck (remove once Apple ships a fix -- it can cause a small flicker).
+    function nudgeIfStuck() {
+      setTimeout(function(){
+        if (window.visualViewport && window.visualViewport.offsetTop > 0) {
+          window.scrollBy(0, -1);
+          window.scrollBy(0, 1);
+        }
+        syncFrameToViewport();
+      }, 100);
+    }
+
+    window.addEventListener('message', function(e){
+      var d = e && e.data;
+      if (!d || typeof d !== 'object' || d.source !== 'quincy-widget') return;
+      if (d.type === 'close') { closeIframe(); return; }
+      if (d.type === 'blur') nudgeIfStuck();
+    });
 
     function openIframe() {
       if (iframe) return;
@@ -98,6 +157,8 @@
           });
       }
       document.body.appendChild(iframe);
+      window.scrollTo(0, 0);
+      syncFrameToViewport();
     }
 
     function closeIframe() {
@@ -127,13 +188,6 @@
       if (dismissed) return;
       teaser.classList.add('visible');
     }, NUDGE_DELAY);
-
-    window.addEventListener('message', function(e){
-      var d = e && e.data;
-      if (!d || typeof d !== 'object') return;
-      if (d.source !== 'quincy-widget') return;
-      if (d.type === 'close') closeIframe();
-    });
   }
 
   // ───── Desktop widget (original DOM-injected) ─────
