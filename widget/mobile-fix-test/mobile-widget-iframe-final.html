@@ -496,17 +496,15 @@ body.kb-open .footer { display: none; }
   // Tapping any control inside the panel must not steal focus from the input.
   // If it does, blur fires -> the footer un-collapses -> the layout shifts the
   // button out from under the finger, and the click is lost (you had to tap
-  // twice). preventDefault on pointerdown keeps focus on the input, so the
-  // keyboard stays up and the click lands first time.
+  // twice).
   function keepFocus(el) {
-    // pointerdown preventDefault alone isn't reliable on iOS Safari -- the
-    // input can still blur before it fires. touchstart is what iOS actually
-    // consults when deciding whether to blur the focused field, so it has to
-    // be blocked there too (needs {passive:false} for preventDefault to take
-    // effect). This is the same combination production chat widgets use for
-    // exactly this "second tap needed to send" symptom.
-    el.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
-    el.addEventListener('pointerdown', function(e){ e.preventDefault(); });
+    // mousedown's default action is specifically what blurs the currently
+    // focused element on tap; preventing it there (not touchstart, which
+    // suppresses the click entirely on iOS, and not pointerdown, which
+    // doesn't reliably stop the blur) is the standard, long-proven fix for
+    // "tapping a button next to a focused input closes the keyboard /
+    // eats the tap."
+    el.addEventListener('mousedown', function(e){ e.preventDefault(); });
   }
   keepFocus(sendBtn);
 
