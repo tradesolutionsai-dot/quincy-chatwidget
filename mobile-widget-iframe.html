@@ -454,8 +454,14 @@ body.kb-open .footer { display: none; }
     input.value = '';
     input.disabled = true;
     sendBtn.disabled = true;
+    var typingText = typing.querySelector('.typing-text');
+    typingText.textContent = 'Captain Q';
     typing.classList.add('active');
     scrollBot(true);
+    var slowTimer = setTimeout(function(){
+      typingText.textContent = 'Looking into that';
+      scrollBot(true);
+    }, 5000);
 
     var controller = new AbortController();
     var timeoutId = setTimeout(function(){ controller.abort(); }, TIMEOUT_MS);
@@ -466,9 +472,10 @@ body.kb-open .footer { display: none; }
       body: JSON.stringify({sessionId: sid, chatInput: text}),
       signal: controller.signal
     })
-    .then(function(r){ clearTimeout(timeoutId); return r.json(); })
+    .then(function(r){ clearTimeout(timeoutId); clearTimeout(slowTimer); return r.json(); })
     .then(function(d){
       typing.classList.remove('active');
+      typingText.textContent = 'Captain Q';
       var reply = d.output || d.text || d.response || d.message || (typeof d === 'string' ? d : 'Sorry, something went wrong.');
       addMsg(reply, 'bot');
       saveConvo();
@@ -477,7 +484,9 @@ body.kb-open .footer { display: none; }
     })
     .catch(function(){
       clearTimeout(timeoutId);
+      clearTimeout(slowTimer);
       typing.classList.remove('active');
+      typingText.textContent = 'Captain Q';
       addMsg('Sorry, something went wrong. Please try again.', 'bot');
       input.disabled = false;
       sendBtn.disabled = false;

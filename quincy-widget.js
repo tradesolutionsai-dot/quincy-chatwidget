@@ -461,7 +461,7 @@ function send(text){if(!text.trim())return;addMsg(text.trim(),'user');input.valu
 const typingText=typing.querySelector('.q-typing-text');
 typingText.textContent='Captain Q';
 typing.classList.add('active');scrollBot(true);
-const slowTimer=setTimeout(()=>{typingText.textContent='Looking into that';scrollBot(true);},8000);
+const slowTimer=setTimeout(()=>{typingText.textContent='Looking into that';scrollBot(true);},5000);
 const ctrl=new AbortController();const tid=setTimeout(()=>ctrl.abort(),TIMEOUT_MS);
 fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:sid,chatInput:text.trim()}),signal:ctrl.signal})
 .then(r=>r.json()).then(d=>{clearTimeout(tid);clearTimeout(slowTimer);typing.classList.remove('active');typingText.textContent='Captain Q';
