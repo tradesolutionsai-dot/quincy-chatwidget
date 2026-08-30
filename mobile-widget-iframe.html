@@ -499,6 +499,13 @@ body.kb-open .footer { display: none; }
   // twice). preventDefault on pointerdown keeps focus on the input, so the
   // keyboard stays up and the click lands first time.
   function keepFocus(el) {
+    // pointerdown preventDefault alone isn't reliable on iOS Safari -- the
+    // input can still blur before it fires. touchstart is what iOS actually
+    // consults when deciding whether to blur the focused field, so it has to
+    // be blocked there too (needs {passive:false} for preventDefault to take
+    // effect). This is the same combination production chat widgets use for
+    // exactly this "second tap needed to send" symptom.
+    el.addEventListener('touchstart', function(e){ e.preventDefault(); }, { passive: false });
     el.addEventListener('pointerdown', function(e){ e.preventDefault(); });
   }
   keepFocus(sendBtn);
