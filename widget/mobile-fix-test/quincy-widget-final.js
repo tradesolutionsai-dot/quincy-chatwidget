@@ -2,6 +2,31 @@
 (function() {
   'use strict';
 
+  // Fires once per page load, the moment the widget is opened (not on the
+  // proactive bubble, and not on page load itself -- only real intent).
+  // Warms the connection to Supabase (history + vector RPC) and OpenAI
+  // embeddings, so the actual first message doesn't pay TCP/TLS setup cost
+  // on top of the request itself. Deliberately hits a separate, standalone
+  // n8n workflow rather than the AI Agent's chat completion endpoint --
+  // that call processes the full system prompt (thousands of tokens) on
+  // every invocation, so warming it on every open (including visitors who
+  // never send a message) would spend real money for no benefit. Failure
+  // here must never be visible to the user.
+  var WARMUP_URL = 'https://n8n.tr-ai-de-solutions.com/webhook/fcfa6098-d7ec-4d44-858f-fd80d4d0a196/chat';
+  var warmed = false;
+  function warmup() {
+    if (warmed) return;
+    warmed = true;
+    try {
+      fetch(WARMUP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatInput: '__warmup__', sessionId: 'warmup' }),
+        keepalive: true
+      }).catch(function(){});
+    } catch (e) {}
+  }
+
   // ───── Mobile dispatch ─────
   // Mobile uses a separate iframe-based widget (see mobile-widget-iframe-final.html).
   // Desktop uses the original DOM-injected widget below.
@@ -134,6 +159,7 @@
 
     function openIframe() {
       if (iframe) return;
+      warmup();
       bubble.classList.add('open');
       hideTeaser();
       lockBody();
@@ -414,7 +440,7 @@ const bubble=shadow.getElementById('qBubble'),win=shadow.getElementById('qWin'),
 msgs.addEventListener('scroll',()=>{userScrolled=msgs.scrollTop<msgs.scrollHeight-msgs.clientHeight-50;});
 let lastVVH=0;
 function preventBodyTouch(e){let n=e.target;while(n&&n!==document.documentElement){if(n===msgs&&n.scrollHeight>n.clientHeight)return;n=n.parentNode;}e.preventDefault();}
-function openWidget(){win.style.bottom='';win.style.top='';win.style.height='';win.classList.add('open');bubble.classList.add('open');pro.classList.remove('visible');if(window.innerWidth<=480){window.scrollTo(0,0);document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';document.documentElement.style.overscrollBehavior='none';document.body.style.overscrollBehavior='none';document.addEventListener('touchmove',preventBodyTouch,{passive:false});lastVVH=window.innerHeight;requestAnimationFrame(()=>{win.style.top='0px';win.style.height=window.innerHeight+'px';win.style.bottom='auto';});}msgs.scrollTop=msgs.scrollHeight;if(window.innerWidth>480){try{input.focus({preventScroll:true});}catch(e){input.focus();}}}
+function openWidget(){warmup();win.style.bottom='';win.style.top='';win.style.height='';win.classList.add('open');bubble.classList.add('open');pro.classList.remove('visible');if(window.innerWidth<=480){window.scrollTo(0,0);document.documentElement.style.overflow='hidden';document.body.style.overflow='hidden';document.documentElement.style.overscrollBehavior='none';document.body.style.overscrollBehavior='none';document.addEventListener('touchmove',preventBodyTouch,{passive:false});lastVVH=window.innerHeight;requestAnimationFrame(()=>{win.style.top='0px';win.style.height=window.innerHeight+'px';win.style.bottom='auto';});}msgs.scrollTop=msgs.scrollHeight;if(window.innerWidth>480){try{input.focus({preventScroll:true});}catch(e){input.focus();}}}
 function closeWidget(){try{input.blur();}catch(e){}win.classList.remove('open');bubble.classList.remove('open');win.style.bottom='';win.style.top='';win.style.height='';if(window.innerWidth<=480){document.documentElement.style.overflow='';document.body.style.overflow='';document.documentElement.style.overscrollBehavior='';document.body.style.overscrollBehavior='';document.removeEventListener('touchmove',preventBodyTouch);lastVVH=0;}}
 bubble.addEventListener('click',()=>{win.classList.contains('open')?closeWidget():openWidget();});
 pro.addEventListener('click',()=>openWidget());
